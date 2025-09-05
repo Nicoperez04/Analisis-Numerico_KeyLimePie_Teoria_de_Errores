@@ -143,7 +143,7 @@ export default function HomePage() {
                 3
               </div>
               <h3 className="font-semibold">Resuelve Ejercicios</h3>
-              <p className="text-sm text-muted-foreground">Pon a prueba tus conocimientos con problemas reales</p>
+              <p className="text-sm text-muted-foreground">Pone a prueba tus conocimientos con problemas reales</p>
             </div>
           </div>
         </CardContent>

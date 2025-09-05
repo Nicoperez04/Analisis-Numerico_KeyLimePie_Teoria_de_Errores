@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -52,33 +53,49 @@ export function Header() {
           <div className="flex items-center space-x-2">
             <ThemeToggle />
 
-            {/* Key Lime Pie Logo - Green circle */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-2 hover:bg-key-lime/10 focus-visible:ring-2 focus-visible:ring-key-lime"
-                  aria-label="Key Lime Pie team members"
-                >
-                  <div className="h-8 w-8 rounded-full bg-key-lime shadow-sm" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-3 py-2 text-sm font-semibold flex items-center gap-2 border-b">
-                  <Users className="h-4 w-4 text-key-lime" />
-                  <span className="text-key-lime">Integrantes</span>
-                </div>
-                {teamMembers.map((member) => (
-                  <DropdownMenuItem key={member} className="text-sm py-2 focus:bg-key-lime/10">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-key-lime/60" />
-                      {member}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Key Lime Pie Logo */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-0 hover:bg-key-lime/10 focus-visible:ring-2 focus-visible:ring-key-lime"
+                    aria-label="Mostrar integrantes del equipo"
+                    title="Ver integrantes"
+                  >
+                    <Image
+                      src="/logo.png"            // tu archivo en /public
+                      alt="Logo Key Lime Pie"
+                      width={60}
+                      height={60}
+                      priority
+                      className="h-8 w-8 object-contain"  // sin rounded-full para no cortar el aro/texto
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" sideOffset={8} className="z-[60] w-56">
+                  <div className="px-3 py-2 text-sm font-semibold flex items-center gap-2 border-b">
+                    <Users className="h-4 w-4 text-key-lime" />
+                    <span className="text-key-lime">Integrantes</span>
+                  </div>
+                  {[
+                    "Nicolas Perez",
+                    "Agustina Egüen",
+                    "Santiago Talavera",
+                    "Tomas Bellizzi",
+                  ].map((member) => (
+                    <DropdownMenuItem key={member} className="text-sm py-2 focus:bg-key-lime/10">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-key-lime/60" />
+                        {member}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+
 
             {/* Mobile menu trigger */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
