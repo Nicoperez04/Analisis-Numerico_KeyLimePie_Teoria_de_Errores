@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { FormulaBlock } from "@/components/formula-block"
-import { CheckCircle, XCircle, Eye, Shuffle, Download } from "lucide-react"
+import { CheckCircle, XCircle, Eye, Shuffle } from "lucide-react"
 import { parseNumber, formatNumber, getDecimalLocale } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -21,6 +20,59 @@ interface ExerciseCardProps {
   onResult?: (result: { id: string; correct: boolean; userAnswer: number; attempt: number }) => void
   title?: string
   className?: string
+}
+
+/** Intenta convertir una línea “humana” en LaTeX. Devuelve null si conviene dejarla como texto. */
+function toLatex(line: string): string | null {
+  const raw = line.trim()
+  if (!raw) return null
+
+  // Si ya parece LaTeX, lo respetamos
+  if (/\\[a-zA-Z]/.test(raw)) return raw
+
+  // Títulos/pasos: dejarlos en texto
+  if (/^Paso\s*\d+/i.test(raw)) return null
+
+  // ¿Tiene pinta de fórmula?
+  const hasMath = /[=×|Ω]|Δ\*|ε\*|∂/.test(raw)
+  if (!hasMath) return null
+
+  // Separamos prefijo con dos puntos para mantenerlo como texto
+  let prefix = ""
+  let body = raw
+  const colon = raw.indexOf(":")
+  if (colon !== -1) {
+    prefix = raw.slice(0, colon).trim()
+    body = raw.slice(colon + 1).trim()
+  }
+
+  // Reemplazos “inteligentes”
+  let tex = body
+
+  // Δ*, ε*
+  tex = tex.replace(/Δ\*/g, String.raw`\Delta^{*}`)
+  tex = tex.replace(/ε\*/g, String.raw`\varepsilon^{*}`)
+
+  // | ... |
+  tex = tex.replace(/\|([^|]+)\|/g, String.raw`\left|$1\right|`)
+
+  // multiplicación
+  tex = tex.replace(/×/g, String.raw`\times`)
+
+  // derivados ∂R/∂V (admite espacios)
+  tex = tex.replace(/∂\s*([A-Za-z]+)\s*\/\s*∂\s*([A-Za-z]+)/g, String.raw`\frac{\partial $1}{\partial $2}`)
+
+  // Omega
+  tex = tex.replace(/Ω/g, String.raw`\,\Omega`)
+
+  // Si no hubo cambios “realmente latex”, no fuerzo MathJax
+  if (tex === body && !/\\/.test(tex)) return null
+
+  // Con prefijo tipo “Efecto de V: …”
+  if (prefix) {
+    return String.raw`\text{${prefix}: }\; ${tex}`
+  }
+  return tex
 }
 
 export function ExerciseCard({
@@ -65,43 +117,6 @@ export function ExerciseCard({
     onNewRandom?.()
   }
 
-  const handleExportCSV = () => {
-    const locale = getDecimalLocale()
-    const csvData = [
-      [
-        "ID",
-        "Fecha",
-        "Ejercicio",
-        "Respuesta Usuario",
-        "Respuesta Correcta",
-        "Correcto",
-        "Error Relativo (%)",
-        "Intentos",
-      ],
-      [
-        id,
-        new Date().toLocaleString(locale === "ES" ? "es-ES" : "en-US"),
-        statement.replace(/\n|\r/g, " ").slice(0, 140),
-        userAnswer,
-        answer,
-        isCorrect ? "Sí" : "No",
-        answer !== 0 ? Math.abs((parseNumber(userAnswer, locale) - answer) / answer) * 100 : 0,
-        attemptCount,
-      ],
-    ]
-
-    const csvContent = csvData.map((row) => row.join(",")).join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.setAttribute("download", `ejercicio_${id}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
   const locale = getDecimalLocale()
 
   return (
@@ -112,12 +127,6 @@ export function ExerciseCard({
             {title ?? `Ejercicio ${id}`}
           </CardTitle>
           <div className="flex gap-2">
-            {isChecked && (
-              <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="h-4 w-4 mr-1" />
-                CSV
-              </Button>
-            )}
             {onNewRandom && (
               <Button variant="outline" size="sm" onClick={handleNewRandom}>
                 <Shuffle className="h-4 w-4 mr-1" />
@@ -127,6 +136,7 @@ export function ExerciseCard({
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-6">
         {/* Enunciado */}
         <div className="space-y-3">
@@ -175,28 +185,36 @@ export function ExerciseCard({
                   <span className="font-medium text-red-700 dark:text-red-300">Incorrecto</span>
                 </>
               )}
-              <Badge variant="secondary" className="ml-auto">
-                Intentos: {attemptCount}
-              </Badge>
+              <span className="ml-auto text-xs text-muted-foreground">Intentos: {attemptCount}</span>
             </div>
+
             {!isCorrect && (
               <p className="text-sm text-muted-foreground mt-2">
                 La respuesta correcta es {formatNumber(answer, locale)} (tolerancia ±{formatNumber(tolerance, locale)}).
               </p>
             )}
+
             <div className="mt-3">
               <Button variant="ghost" size="sm" onClick={() => setShowSolution((s) => !s)} className="gap-2">
                 <Eye className="h-4 w-4" />
                 {showSolution ? "Ocultar solución" : "Ver solución"}
               </Button>
             </div>
+
             {showSolution && (
               <div className="mt-2 space-y-2 bg-muted/40 rounded-md p-3">
-                {solution.map((line, i) => (
-                  <div key={i} className="text-sm">
-                    <FormulaBlock latex={line} />
-                  </div>
-                ))}
+                {solution.map((line, i) => {
+                  const latex = toLatex(line)
+                  return (
+                    <div key={i} className="text-sm">
+                      {latex ? (
+                        <FormulaBlock latex={latex} />
+                      ) : (
+                        <p className="whitespace-pre-wrap leading-relaxed">{line}</p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -212,3 +230,4 @@ export function ExerciseCard({
     </Card>
   )
 }
+
