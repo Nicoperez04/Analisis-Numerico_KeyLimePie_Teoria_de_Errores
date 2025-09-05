@@ -135,7 +135,7 @@ export function DirectCalculator() {
               </TabsTrigger>
             ))}
             <TabsTrigger value="Custom" className="text-xs">
-              Custom
+              Personalizado
             </TabsTrigger>
           </TabsList>
 

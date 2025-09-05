@@ -18,6 +18,8 @@ interface ExerciseCardProps {
   tolerance: number
   solution: string[]
   onNewRandom?: () => void
+  onResult?: (result: { id: string; correct: boolean; userAnswer: number; attempt: number }) => void
+  title?: string
   className?: string
 }
 
@@ -28,6 +30,8 @@ export function ExerciseCard({
   tolerance,
   solution,
   onNewRandom,
+  onResult,
+  title,
   className,
 }: ExerciseCardProps) {
   const [userAnswer, setUserAnswer] = useState("")
@@ -45,6 +49,8 @@ export function ExerciseCard({
     setIsCorrect(correct)
     setIsChecked(true)
     setAttemptCount((prev) => prev + 1)
+
+    onResult?.({ id, correct, userAnswer: parsedAnswer, attempt: attemptCount + 1 })
   }
 
   const handleReset = () => {
@@ -61,9 +67,6 @@ export function ExerciseCard({
 
   const handleExportCSV = () => {
     const locale = getDecimalLocale()
-    const parsedAnswer = parseNumber(userAnswer, locale)
-    const relativeError = isChecked ? Math.abs(((parsedAnswer - answer) / answer) * 100) : 0
-
     const csvData = [
       [
         "ID",
@@ -78,28 +81,25 @@ export function ExerciseCard({
       [
         id,
         new Date().toLocaleString(locale === "ES" ? "es-ES" : "en-US"),
-        `"${statement.replace(/"/g, '""')}"`, // Escape quotes in statement
-        formatNumber(parsedAnswer, locale),
-        formatNumber(answer, locale),
+        statement.replace(/\n|\r/g, " ").slice(0, 140),
+        userAnswer,
+        answer,
         isCorrect ? "Sí" : "No",
-        formatNumber(relativeError, locale),
-        attemptCount.toString(),
+        answer !== 0 ? Math.abs((parseNumber(userAnswer, locale) - answer) / answer) * 100 : 0,
+        attemptCount,
       ],
     ]
 
     const csvContent = csvData.map((row) => row.join(",")).join("\n")
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
-
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob)
-      link.setAttribute("href", url)
-      link.setAttribute("download", `ejercicio_${id}_${new Date().toISOString().split("T")[0]}.csv`)
-      link.style.visibility = "hidden"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    }
+    link.href = url
+    link.setAttribute("download", `ejercicio_${id}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   const locale = getDecimalLocale()
@@ -108,7 +108,9 @@ export function ExerciseCard({
     <Card className={cn("rounded-2xl border-0 shadow-lg", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Ejercicio {id}</CardTitle>
+          <CardTitle className="text-lg">
+            {title ?? `Ejercicio ${id}`}
+          </CardTitle>
           <div className="flex gap-2">
             {isChecked && (
               <Button variant="outline" size="sm" onClick={handleExportCSV}>
@@ -126,12 +128,12 @@ export function ExerciseCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Statement */}
+        {/* Enunciado */}
         <div className="space-y-3">
           <p className="text-sm leading-relaxed">{statement}</p>
         </div>
 
-        {/* Answer Input */}
+        {/* Respuesta */}
         <div className="space-y-3">
           <Label htmlFor={`answer-${id}`} className="text-sm font-medium">
             Tu respuesta:
@@ -147,66 +149,60 @@ export function ExerciseCard({
               className="flex-1"
               disabled={isChecked}
             />
-            <Button onClick={handleCheck} disabled={!userAnswer.trim() || isChecked} className="min-w-[100px]">
+            <Button onClick={handleCheck} disabled={isChecked || userAnswer.trim() === ""}>
               Verificar
             </Button>
           </div>
-          {attemptCount > 0 && <p className="text-xs text-muted-foreground">Intentos: {attemptCount}</p>}
         </div>
 
-        {/* Result */}
+        {/* Resultado */}
         {isChecked && (
-          <div className="space-y-3">
+          <div
+            className={cn(
+              "rounded-lg p-4 border",
+              isCorrect ? "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900" : "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900",
+            )}
+          >
             <div className="flex items-center gap-2">
               {isCorrect ? (
                 <>
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                  >
-                    ¡Correcto!
-                  </Badge>
+                  <span className="font-medium text-green-700 dark:text-green-300">¡Correcto!</span>
                 </>
               ) : (
                 <>
                   <XCircle className="h-5 w-5 text-red-600" />
-                  <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                    Incorrecto
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    Error: {formatNumber(Math.abs(((parseNumber(userAnswer, locale) - answer) / answer) * 100), locale)}
-                    %
-                  </Badge>
+                  <span className="font-medium text-red-700 dark:text-red-300">Incorrecto</span>
                 </>
               )}
+              <Badge variant="secondary" className="ml-auto">
+                Intentos: {attemptCount}
+              </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Respuesta esperada: {formatNumber(answer, locale)} (±{formatNumber(tolerance, locale)})
-            </p>
+            {!isCorrect && (
+              <p className="text-sm text-muted-foreground mt-2">
+                La respuesta correcta es {formatNumber(answer, locale)} (tolerancia ±{formatNumber(tolerance, locale)}).
+              </p>
+            )}
+            <div className="mt-3">
+              <Button variant="ghost" size="sm" onClick={() => setShowSolution((s) => !s)} className="gap-2">
+                <Eye className="h-4 w-4" />
+                {showSolution ? "Ocultar solución" : "Ver solución"}
+              </Button>
+            </div>
+            {showSolution && (
+              <div className="mt-2 space-y-2 bg-muted/40 rounded-md p-3">
+                {solution.map((line, i) => (
+                  <div key={i} className="text-sm">
+                    <FormulaBlock latex={line} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Solution */}
-        <div className="space-y-3">
-          <Button variant="outline" onClick={() => setShowSolution(!showSolution)} className="w-full">
-            <Eye className="h-4 w-4 mr-2" />
-            {showSolution ? "Ocultar" : "Ver"} solución
-          </Button>
-
-          {showSolution && (
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
-              <h4 className="font-medium text-sm">Solución paso a paso:</h4>
-              {solution.map((step, index) => (
-                <div key={index} className="text-sm">
-                  {step.includes("\\") ? <FormulaBlock latex={step} /> : <p className="leading-relaxed">{step}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Reset Button */}
+        {/* Reintento */}
         {isChecked && (
           <Button variant="ghost" onClick={handleReset} className="w-full">
             Intentar de nuevo

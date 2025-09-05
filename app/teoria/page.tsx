@@ -163,10 +163,20 @@ export default function TeoriaPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <Card className="border-0 bg-muted/30">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Suma y Resta</CardTitle>
+                  <CardTitle className="text-sm">Suma</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <FormulaBlock latex={L`\Delta^*(x \pm y) = \Delta^*(x) + \Delta^*(y)`} />
+                  <FormulaBlock latex={L`\Delta^*(x + y) = \Delta^*(x) + \Delta^*(y)`} />
+                  <p className="text-xs text-muted-foreground">Los errores absolutos se suman</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 bg-muted/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Resta</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <FormulaBlock latex={L`\Delta^*(x - y) = \Delta^*(x) + \Delta^*(y)`} />
                   <p className="text-xs text-muted-foreground">Los errores absolutos se suman</p>
                 </CardContent>
               </Card>
@@ -188,16 +198,6 @@ export default function TeoriaPage() {
                 <CardContent className="space-y-2">
                   <FormulaBlock latex={L`\varepsilon^*(x/y) = \varepsilon^*(x) + \varepsilon^*(y)`} />
                   <p className="text-xs text-muted-foreground">Igual que el producto</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 bg-muted/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Potencia</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <FormulaBlock latex={L`\varepsilon^*(x^p) \approx |p| \varepsilon^*(x)`} />
-                  <p className="text-xs text-muted-foreground">El exponente amplifica el error</p>
                 </CardContent>
               </Card>
             </div>
@@ -320,47 +320,6 @@ export default function TeoriaPage() {
               <div className="p-3 bg-muted/30 rounded-lg">
                 <FormulaBlock latex={L`\Delta^*(e^x) = e^x \Delta^*(x)`} />
               </div>
-            </div>
-          </div>
-        </div>
-      </TheoryCard>
-
-      {/* Trampas Comunes */}
-      <TheoryCard title="Trampas y Precauciones" icon={<AlertTriangle className="h-5 w-5 text-red-500" />}>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-              <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2 flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Cancelación Catastrófica
-              </h5>
-              <p className="text-sm text-red-700 dark:text-red-300 mb-2">
-                En operaciones como x - y donde x ≈ y, el error relativo se amplifica enormemente.
-              </p>
-              <FormulaBlock latex={L`\varepsilon^*(x-y) = \frac{\Delta^*(x) + \Delta^*(y)}{|x-y|}`} />
-            </div>
-
-            <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <h5 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">Denominadores Pequeños</h5>
-              <p className="text-sm text-orange-700 dark:text-orange-300">
-                En f = g/h, si h es pequeño, el error se amplifica significativamente.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <h5 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">No Linealidad</h5>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                Las fórmulas lineales son aproximaciones. Para errores grandes, usar métodos de Monte Carlo.
-              </p>
-            </div>
-
-            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h5 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Correlaciones</h5>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Si las variables están correlacionadas, la fórmula estándar sobreestima el error.
-              </p>
             </div>
           </div>
         </div>

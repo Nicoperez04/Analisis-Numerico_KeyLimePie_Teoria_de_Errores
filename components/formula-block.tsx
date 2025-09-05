@@ -1,5 +1,16 @@
 "use client"
 
+import { useEffect, useRef } from "react"
+
+declare global {
+  interface Window {
+    MathJax?: {
+      typesetPromise?: (elements?: any[]) => Promise<void>
+      typesetClear?: (elements?: any[]) => void
+    }
+  }
+}
+
 type Props = {
   latex: string
   inline?: boolean
@@ -7,66 +18,56 @@ type Props = {
   ariaLabel?: string
 }
 
+// Normaliza marcadores a LaTeX válido
+function normalizeLatex(s: string) {
+  return s
+    .replace(/Δ\*\*\s*\(/g, "\\Delta^{*}(")
+    .replace(/ε\*\*\s*\(/g, "\\varepsilon^{*}(")
+    .replace(/Δ\*/g, "\\Delta^{*}")
+    .replace(/ε\*/g, "\\varepsilon^{*}")
+    .replace(/∂/g, "\\partial")
+    .trim()
+}
+
 export function FormulaBlock({ latex, inline = false, className, ariaLabel }: Props) {
-  // Convert common LaTeX symbols to Unicode equivalents
-  const convertLatexToUnicode = (latex: string): string => {
-    return latex
-      .replace(/\\Delta/g, "Δ")
-      .replace(/\\delta/g, "δ")
-      .replace(/\\varepsilon/g, "ε")
-      .replace(/\\epsilon/g, "ε")
-      .replace(/\\alpha/g, "α")
-      .replace(/\\beta/g, "β")
-      .replace(/\\gamma/g, "γ")
-      .replace(/\\pi/g, "π")
-      .replace(/\\sum/g, "∑")
-      .replace(/\\int/g, "∫")
-      .replace(/\\partial/g, "∂")
-      .replace(/\\infty/g, "∞")
-      .replace(/\\pm/g, "±")
-      .replace(/\\times/g, "×")
-      .replace(/\\div/g, "÷")
-      .replace(/\\leq/g, "≤")
-      .replace(/\\geq/g, "≥")
-      .replace(/\\neq/g, "≠")
-      .replace(/\\approx/g, "≈")
-      .replace(/\\sqrt{([^}]+)}/g, "√($1)")
-      .replace(/\\frac{([^}]+)}{([^}]+)}/g, "($1)/($2)")
-      .replace(/\\left\|/g, "|")
-      .replace(/\\right\|/g, "|")
-      .replace(/\\left\(/g, "(")
-      .replace(/\\right\)/g, ")")
-      .replace(/\\left\[/g, "[")
-      .replace(/\\right\]/g, "]")
-      .replace(/\\\\/g, " ")
-      .replace(/\\,/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-  }
+  const ref = useRef<HTMLDivElement | HTMLSpanElement>(null)
 
-  const displayText = convertLatexToUnicode(latex)
+  useEffect(() => {
+    let cancelled = false
 
-  if (inline) {
-    return (
-      <span
-        role="img"
-        aria-label={ariaLabel || "Fórmula"}
-        className={`font-mono text-sm bg-muted/50 px-2 py-1 rounded border ${className || ""}`}
-      >
-        {displayText}
-      </span>
-    )
-  }
+    const typeset = () => {
+      const el = ref.current
+      const mj = typeof window !== "undefined" ? window.MathJax : undefined
+      if (!el) return
+
+      if (mj?.typesetPromise) {
+        mj.typesetClear?.([el])
+        mj.typesetPromise([el]).catch(() => {})
+      } else if (!cancelled) {
+        // Reintenta hasta que cargue MathJax
+        setTimeout(typeset, 60)
+      }
+    }
+
+    typeset()
+    return () => { cancelled = true }
+  }, [latex, inline])
+
+  const tex = normalizeLatex(latex)
+  const Wrapper: any = inline ? "span" : "div"
+  const content = inline ? `\\(${tex}\\)` : `\\[${tex}\\]`
 
   return (
-    <div
+    <Wrapper
+      ref={ref as any}
       role="img"
       aria-label={ariaLabel || "Fórmula"}
-      className={`font-mono text-center p-4 bg-muted/30 rounded-lg border text-lg ${className || "overflow-x-auto my-2"}`}
+      className={className ?? (inline ? "" : "my-2")}
     >
-      {displayText}
-    </div>
+      {content}
+    </Wrapper>
   )
 }
 
 export default FormulaBlock
+

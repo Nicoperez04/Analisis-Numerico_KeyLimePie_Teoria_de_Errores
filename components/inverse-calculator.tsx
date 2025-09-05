@@ -26,8 +26,7 @@ export function InverseCalculator() {
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement) return // Don't trigger when typing in inputs
-
+      if (event.target instanceof HTMLInputElement) return
       switch (event.key) {
         case "1":
           event.preventDefault()
@@ -48,7 +47,6 @@ export function InverseCalculator() {
           break
       }
     }
-
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
   }, [])
@@ -58,7 +56,6 @@ export function InverseCalculator() {
     if (activePreset === "Custom") {
       const varNames = customExpression.match(/\b[a-zA-Z][a-zA-Z0-9]*\b/g) || []
       const uniqueVars = [...new Set(varNames)].filter((name) => name !== "PI")
-
       setVariables(
         uniqueVars.map((name) => ({
           name,
@@ -83,26 +80,20 @@ export function InverseCalculator() {
   const updateVariable = (index: number, field: "value", newValue: string) => {
     const locale = getDecimalLocale()
     const parsedValue = parseNumber(newValue, locale)
-
     setVariables((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: parsedValue } : v)))
   }
 
   const calculate = async () => {
     if (variables.length === 0) return
-
     setIsCalculating(true)
-
     try {
       const expression =
         activePreset === "Custom"
           ? customExpression
           : PRESET_FUNCTIONS[activePreset as keyof typeof PRESET_FUNCTIONS]?.formula
-
       if (!expression) return
-
       const locale = getDecimalLocale()
       const target = parseNumber(targetError, locale)
-
       const inverseResult = calculateInverse(expression, variables, target, isRelativeTarget, hypothesis)
       setResults(inverseResult)
     } catch (error) {
@@ -112,9 +103,7 @@ export function InverseCalculator() {
     }
   }
 
-  const reset = () => {
-    setResults(null)
-  }
+  const reset = () => setResults(null)
 
   const locale = getDecimalLocale()
   const currentPreset =
@@ -160,6 +149,7 @@ export function InverseCalculator() {
           <kbd className="px-1 py-0.5 bg-muted rounded text-xs">R</kbd> recalcular
         </p>
       </CardHeader>
+
       <CardContent className="space-y-6">
         {/* Preset Selection */}
         <Tabs value={activePreset} onValueChange={setActivePreset}>
@@ -170,7 +160,7 @@ export function InverseCalculator() {
               </TabsTrigger>
             ))}
             <TabsTrigger value="Custom" className="text-xs">
-              Custom
+              Personalizado
             </TabsTrigger>
           </TabsList>
 
@@ -233,14 +223,14 @@ export function InverseCalculator() {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="relative" id="relative" />
-                  <Label htmlFor="relative" className="text-sm">
-                    Error relativo ε*_f
+                  <Label htmlFor="relative" className="text-sm flex items-center gap-2">
+                    Error relativo <FormulaBlock inline latex={String.raw`\varepsilon^{*}_{f}`} />
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="absolute" id="absolute" />
-                  <Label htmlFor="absolute" className="text-sm">
-                    Error absoluto Δ*_f
+                  <Label htmlFor="absolute" className="text-sm flex items-center gap-2">
+                    Error absoluto <FormulaBlock inline latex={String.raw`\Delta^{*}_{f}`} />
                   </Label>
                 </div>
               </RadioGroup>
@@ -264,7 +254,9 @@ export function InverseCalculator() {
         {/* Mother Equation */}
         <div className="p-4 bg-blue-accent/5 rounded-lg border border-blue-accent/20">
           <h4 className="font-medium mb-3">Ecuación madre</h4>
-          <FormulaBlock latex="\Delta^*_f = \sum_{i=1}^{n} \left|\frac{\partial f}{\partial x_i}\right| \Delta^*(x_i)" />
+          <FormulaBlock
+            latex={String.raw`\Delta^{*}_{f} = \sum_{i=1}^{n} \left|\frac{\partial f}{\partial x_i}\right| \Delta^{*}(x_i)`}
+          />
         </div>
 
         {/* Hypothesis Selection */}
@@ -281,12 +273,27 @@ export function InverseCalculator() {
                   <RadioGroupItem value={hyp} id={hyp} className="mt-1" />
                   <div className="flex-1 space-y-2">
                     <Label htmlFor={hyp} className="text-sm font-medium flex items-center gap-2">
-                      <Badge variant="secondary" className={`bg-${info.color}/20`}>
-                        {hyp}
-                      </Badge>
+                      <Badge variant="secondary" className={`bg-${info.color}/20`}>{hyp}</Badge>
                       {info.title}
                     </Label>
-                    <p className="text-xs text-muted-foreground">{info.description}</p>
+
+                    {/* ✅ corregidas: llaves cerradas */}
+                    <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+                      {hyp === "H1" && (
+                        <>
+                          Todas las variables tienen la misma cota absoluta
+                          <FormulaBlock inline latex={String.raw`\Delta^{*}(x_i) = \Delta^{*}_{\mathrm{gen}}`} />
+                        </>
+                      )}
+                      {hyp === "H2" && (
+                        <>
+                          Todas las variables tienen el mismo error relativo
+                          <FormulaBlock inline latex={String.raw`\varepsilon^{*}(x_i) = \varepsilon^{*}_{\mathrm{gen}}`} />
+                        </>
+                      )}
+                      {hyp === "H3" && <>Cada variable contribuye por igual al error total</>}
+                    </div>
+
                     <p className="text-xs text-blue-600 dark:text-blue-400">{info.recommendation}</p>
                   </div>
                 </div>
@@ -326,9 +333,13 @@ export function InverseCalculator() {
                     <div key={variable.name} className="grid grid-cols-3 gap-4 p-3 bg-background/50 rounded">
                       <span className="text-sm font-medium">{variable.name}:</span>
                       <div className="text-right">
-                        <div className="font-mono text-sm">Δ* ≤ {formatNumber(variable.requiredError, locale)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ε* ≤ {formatNumber(variable.requiredRelativeError * 100, locale)}%
+                        <div className="text-sm flex items-center justify-end gap-1">
+                          <FormulaBlock inline latex={String.raw`\Delta^{*} \le`} />
+                          <span>{formatNumber(variable.requiredError, locale)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
+                          <FormulaBlock inline latex={String.raw`\varepsilon^{*} \le`} />
+                          <span>{formatNumber(variable.requiredRelativeError * 100, locale)}%</span>
                         </div>
                       </div>
                     </div>
@@ -366,25 +377,39 @@ export function InverseCalculator() {
               </CardContent>
             </Card>
 
-            {/* Pedagogical Explanation */}
+            {/* Explicación */}
             <Card className="border-0 bg-muted/30">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Lightbulb className="h-5 w-5 text-yellow-500" />
-                  Explicación Pedagógica
+                  Explicación
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
-                  <p>
-                    <strong>Hipótesis {results.hypothesis}:</strong>{" "}
-                    {getHypothesisExplanation(results.hypothesis).description}
+                  <p className="flex items-center gap-1 flex-wrap">
+                    <strong>Hipótesis {results.hypothesis}:</strong>
+                    {results.hypothesis === "H1" && (
+                      <>
+                        Todas las variables tienen la misma cota absoluta
+                        <FormulaBlock inline latex={String.raw`\Delta^{*}(x_i) = \Delta^{*}_{\mathrm{gen}}`} />
+                      </>
+                    )}
+                    {results.hypothesis === "H2" && (
+                      <>
+                        Todas las variables tienen el mismo error relativo
+                        <FormulaBlock inline latex={String.raw`\varepsilon^{*}(x_i) = \varepsilon^{*}_{\mathrm{gen}}`} />
+                      </>
+                    )}
+                    {results.hypothesis === "H3" && <>Cada variable contribuye por igual al error total</>}
                   </p>
+
                   <p>
                     <strong>Objetivo:</strong> {isRelativeTarget ? "Error relativo" : "Error absoluto"} ≤{" "}
                     {formatNumber(parseNumber(targetError, locale), locale)}
                     {isRelativeTarget ? "" : " (unidades de la función)"}
                   </p>
+
                   <p>
                     <strong>Resultado:</strong> Para cumplir el objetivo, cada variable debe medirse con las cotas
                     mostradas arriba. La hipótesis {results.hypothesis} distribuye el "presupuesto de error" de manera{" "}
