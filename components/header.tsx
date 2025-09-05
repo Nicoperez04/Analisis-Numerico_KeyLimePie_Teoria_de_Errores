@@ -79,12 +79,7 @@ export function Header() {
                     <Users className="h-4 w-4 text-key-lime" />
                     <span className="text-key-lime">Integrantes</span>
                   </div>
-                  {[
-                    "Nicolas Perez",
-                    "Agustina Egüen",
-                    "Santiago Talavera",
-                    "Tomas Bellizzi",
-                  ].map((member) => (
+                  {teamMembers.map((member) => (
                     <DropdownMenuItem key={member} className="text-sm py-2 focus:bg-key-lime/10">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-key-lime/60" />

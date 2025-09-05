@@ -131,6 +131,11 @@ export function generateRandomExercise(baseExercise: Omit<Exercise, "id">, seed?
     return {
       ...baseExercise,
       id: randomId,
+            statement: baseExercise.statement.replace(/[\d.]+/g, (match, offset) => {
+          // Lógica simple para reemplazar valores en el enunciado
+          // Esto es un ejemplo, podrías necesitar una lógica más robusta
+          return (parseFloat(match) * variationFactor).toFixed(1);
+      }),
       answer: newAnswer,
       parameters: newParams,
     }
