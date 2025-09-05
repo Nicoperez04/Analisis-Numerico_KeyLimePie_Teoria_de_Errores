@@ -102,22 +102,6 @@ const precise = new Decimal(0.1).plus(0.2)
       docs: "https://recharts.org",
       color: "indigo",
     },
-    {
-      name: "jsPDF + html2canvas",
-      category: "Exportación (Opcional)",
-      icon: <FileText className="h-5 w-5 text-red-500" />,
-      description: "Bibliotecas para generar PDFs y capturar elementos HTML como imágenes",
-      why: "Permite a los usuarios exportar sus cálculos y resultados para documentación o presentaciones académicas.",
-      integration:
-        "Componente ExportPanel que convierte los resultados de las calculadoras en documentos PDF descargables.",
-      example: `// Exportación a PDF
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
-const canvas = await html2canvas(element)
-pdf.addImage(canvas, 'PNG', 0, 0)`,
-      docs: "https://github.com/parallax/jsPDF",
-      color: "red",
-    },
   ]
 
   const getColorClasses = (color: string) => {
