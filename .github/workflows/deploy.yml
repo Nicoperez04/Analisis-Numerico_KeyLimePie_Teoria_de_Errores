@@ -22,26 +22,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build   # genera ./out gracias a output:'export'
-
-      # 1) Desactivar Jekyll (importante por la carpeta _next)
+      - run: npm run build            # genera ./out
       - name: Disable Jekyll
-        run: echo > ./out/.nojekyll
-
-      # 2) Si Next dejó todo bajo /KeyLimePie_Errores, moverlo a la raíz
-      - name: Flatten basePath folder if present
-        run: |
-          if [ -d "./out/KeyLimePie_Errores" ]; then
-            shopt -s dotglob
-            mv ./out/KeyLimePie_Errores/* ./out/
-            rm -rf ./out/KeyLimePie_Errores
-          fi
-
+        run: echo > ./out/.nojekyll   # sirve la carpeta _next sin problemas
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
