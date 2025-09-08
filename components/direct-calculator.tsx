@@ -122,7 +122,6 @@ export function DirectCalculator() {
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           Atajos: <kbd className="px-1 py-0.5 bg-muted rounded text-xs">R</kbd> recalcular,{" "}
-          <kbd className="px-1 py-0.5 bg-muted rounded text-xs">E</kbd> extremos
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
