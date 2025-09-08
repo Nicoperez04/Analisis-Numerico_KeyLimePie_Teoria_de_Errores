@@ -1,18 +1,13 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { ExerciseCard } from "@/components/exercise-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Target, Calculator, Shuffle, Trophy, BookOpen, RotateCcw } from "lucide-react"
-import {
-  getAllExercises,
-  getExercisesByType,
-  generateRandomExercise,
-  type Exercise,
-} from "@/lib/exercises"
+import { Target, Calculator, Trophy, BookOpen, RotateCcw } from "lucide-react"
+import { getAllExercises, getExercisesByType, type Exercise } from "@/lib/exercises"
 
 type Progress = { attempted: number; correct: number }
 const PROGRESS_KEY = "an_ejercicios_progress_v1"
@@ -22,7 +17,6 @@ export default function EjerciciosPage() {
   const [activeTab, setActiveTab] = useState("todos")
   const [stats, setStats] = useState<Progress>({ attempted: 0, correct: 0 })
 
-  // ---------- Utilidades de progreso ----------
   useEffect(() => {
     try {
       const saved = localStorage.getItem(PROGRESS_KEY)
@@ -36,25 +30,17 @@ export default function EjerciciosPage() {
     } catch {}
   }, [stats])
 
-  const handleResult = ({ correct }: { correct: boolean }) => {
-    setStats((p) => ({
-      attempted: p.attempted + 1,
-      correct: p.correct + (correct ? 1 : 0),
-    }))
-  }
+  const handleResult = ({ correct }: { correct: boolean }) =>
+    setStats((p) => ({ attempted: p.attempted + 1, correct: p.correct + (correct ? 1 : 0) }))
 
   const resetProgress = () => setStats({ attempted: 0, correct: 0 })
 
-  // ---------- Carga inicial ----------
   useEffect(() => {
-    const initial = getAllExercises().slice(0, 4).map((ex) => generateRandomExercise(ex))
-    setExercises(initial)
+    setExercises(getAllExercises().slice(0, 4))
   }, [])
 
-  // ---------- Tabs ----------
   const handleTabChange = (value: string) => {
     setActiveTab(value)
-
     let filtered: Exercise[]
     switch (value) {
       case "directos":
@@ -66,60 +52,18 @@ export default function EjerciciosPage() {
       default:
         filtered = getAllExercises().slice(0, 4)
     }
-
-    // Siempre muestran parámetros aleatorios al entrar a un tab
-    setExercises(filtered.map((ex) => generateRandomExercise(ex)))
+    setExercises(filtered)
   }
 
-  // ---------- Generaciones ----------
-  // Nuevo ejercicio (otro enunciado del mismo tipo)
-  const replaceWithAnother = (exerciseId: string) => {
-    setExercises((prev) => {
-      const idx = prev.findIndex((e) => e.id === exerciseId)
-      if (idx === -1) return prev
-
-      const current = prev[idx]
-      const pool = getExercisesByType(current.type)
-      // Tomamos uno distinto (si hay más de 1 en el pool)
-      const candidates = pool.filter((e) => e.id !== current.id)
-      const base = (candidates.length ? candidates : pool)[
-        Math.floor(Math.random() * (candidates.length ? candidates.length : pool.length))
-      ]
-      const randomized = generateRandomExercise(base)
-
-      const next = [...prev]
-      next[idx] = randomized
-      return next
-    })
-  }
-
-  // Nuevos parámetros (misma lista de ejercicios visibles)
-  const regenerateAllParameters = () => {
-    setExercises((prev) => prev.map((ex) => generateRandomExercise(ex)))
-  }
-
-  // ---------- Títulos amigables ----------
-  const getDifficultyLabel = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "Fácil"
-      case "medium":
-        return "Medio"
-      case "hard":
-        return "Difícil"
-      default:
-        return difficulty
-    }
-  }
+  const getDifficultyLabel = (d: string) =>
+    d === "easy" ? "Fácil" : d === "medium" ? "Medio" : d === "hard" ? "Difícil" : d
 
   const friendlyTitle = (ex: Exercise, idx: number) => {
     const typeLabel = ex.type === "direct" ? "Directo" : "Inverso"
     const diff = getDifficultyLabel((ex as any).difficulty ?? "")
-    const num = idx + 1
-    return `Ejercicio ${typeLabel}${diff ? ` — ${diff}` : ""} (Nº ${num})`
+    return `Ejercicio ${typeLabel}${diff ? ` — ${diff}` : ""} (Nº ${idx + 1})`
   }
 
-  // ---------- Render ----------
   const totalShown = exercises.length
 
   return (
@@ -134,8 +78,8 @@ export default function EjerciciosPage() {
         </p>
       </div>
 
-      {/* Progreso + Controles globales */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Progreso */}
+      <div className="grid md:grid-cols-1 gap-6">
         <Card className="rounded-2xl border-0 shadow-lg">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -166,93 +110,46 @@ export default function EjerciciosPage() {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="rounded-2xl border-0 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Shuffle className="h-5 w-5 text-blue-accent" />
-              Generación Aleatoria
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={regenerateAllParameters} className="w-full bg-transparent" variant="outline">
-              <Shuffle className="h-4 w-4 mr-2" />
-              Generar Nuevos Parámetros (±10%)
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Cambia los valores numéricos para practicar con diferentes casos
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Tabs / categorías */}
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="todos">Todos (4)</TabsTrigger>
           <TabsTrigger value="directos">Directos (2)</TabsTrigger>
           <TabsTrigger value="inversos">Inversos (2)</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="todos" className="space-y-6">
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold">Colección Completa</h3>
-            <p className="text-muted-foreground">
-              Ejercicios de ambos métodos organizados por dificultad creciente
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="directos" className="space-y-6">
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold flex items-center justify-center gap-2">
-              <Calculator className="h-5 w-5 text-key-lime" />
-              Método Directo
-            </h3>
-            <p className="text-muted-foreground">
-              Calcula el error de la función conociendo los errores de las variables
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="inversos" className="space-y-6">
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold flex items-center justify-center gap-2">
-              <Target className="h-5 w-5 text-blue-accent" />
-              Método Inverso
-            </h3>
-            <p className="text-muted-foreground">
-              Determina las cotas necesarias para cumplir un objetivo de error
-            </p>
-          </div>
-        </TabsContent>
+        <TabsContent value="todos" />
+        <TabsContent value="directos" />
+        <TabsContent value="inversos" />
       </Tabs>
 
-      {/* Lista de ejercicios */}
+      {/* Lista */}
       <div className="space-y-6">
-        {exercises.map((exercise, index) => (
-          <div key={exercise.id} className="space-y-3">
+        {exercises.map((ex, idx) => (
+          <div key={ex.id} className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="text-xs">
-                  {exercise.type === "direct" ? "Directo" : "Inverso"}
+                  {ex.type === "direct" ? "Directo" : "Inverso"}
                 </Badge>
                 <Badge className="text-xs bg-muted text-muted-foreground">Tolerancia ±2%</Badge>
               </div>
               <div className="text-sm text-muted-foreground">
-                Ejercicio {index + 1} de {exercises.length}
+                Ejercicio {idx + 1} de {exercises.length}
               </div>
             </div>
 
             <ExerciseCard
-              id={exercise.id}
-              title={friendlyTitle(exercise, index)}  // << título legible
-              statement={exercise.statement}
-              answer={exercise.answer}
-              tolerance={exercise.tolerance}
-              solution={exercise.solution}
-              onNewRandom={() => replaceWithAnother(exercise.id)} // << ahora sí cambia a otro
-              onResult={handleResult} // << actualiza progreso
+              id={ex.id}
+              title={friendlyTitle(ex, idx)}
+              statement={ex.statement}
+              answer={ex.answer}
+              tolerance={ex.tolerance}
+              solution={ex.solution}
+              /* nuevo: permitir varias respuestas válidas */
+              altAnswers={ex.altAnswers}
+              onResult={handleResult}
             />
           </div>
         ))}
@@ -282,7 +179,6 @@ export default function EjerciciosPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Usa coma decimal si tienes configuración ES</li>
                 <li>• Revisa la solución paso a paso si te equivocas</li>
-                <li>• Genera nuevos parámetros para más práctica</li>
                 <li>• La tolerancia permite pequeños errores de redondeo</li>
               </ul>
             </div>
@@ -292,4 +188,3 @@ export default function EjerciciosPage() {
     </div>
   )
 }
-

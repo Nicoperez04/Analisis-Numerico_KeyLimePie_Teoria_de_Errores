@@ -20,6 +20,8 @@ interface ExerciseCardProps {
   onResult?: (result: { id: string; correct: boolean; userAnswer: number; attempt: number }) => void
   title?: string
   className?: string
+  /** NUEVO: respuestas alternativas válidas (se usan con la misma tolerancia) */
+  altAnswers?: number[]
 }
 
 /** Intenta convertir una línea “humana” en LaTeX. Devuelve null si conviene dejarla como texto. */
@@ -85,6 +87,7 @@ export function ExerciseCard({
   onResult,
   title,
   className,
+  altAnswers = [],
 }: ExerciseCardProps) {
   const [userAnswer, setUserAnswer] = useState("")
   const [isChecked, setIsChecked] = useState(false)
@@ -94,15 +97,17 @@ export function ExerciseCard({
 
   const handleCheck = () => {
     const locale = getDecimalLocale()
-    const parsedAnswer = parseNumber(userAnswer, locale)
-    const difference = Math.abs(parsedAnswer - answer)
-    const correct = difference <= tolerance
+    const x = parseNumber(userAnswer, locale)
+
+    // VALIDACIÓN: answer OR altAnswers
+    const candidates = [answer, ...altAnswers]
+    const correct = candidates.some((v) => Math.abs(x - v) <= tolerance)
 
     setIsCorrect(correct)
     setIsChecked(true)
     setAttemptCount((prev) => prev + 1)
 
-    onResult?.({ id, correct, userAnswer: parsedAnswer, attempt: attemptCount + 1 })
+    onResult?.({ id, correct, userAnswer: x, attempt: attemptCount + 1 })
   }
 
   const handleReset = () => {
@@ -230,4 +235,3 @@ export function ExerciseCard({
     </Card>
   )
 }
-

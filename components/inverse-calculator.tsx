@@ -159,9 +159,6 @@ export function InverseCalculator() {
                 {preset}
               </TabsTrigger>
             ))}
-            <TabsTrigger value="Custom" className="text-xs">
-              Personalizado
-            </TabsTrigger>
           </TabsList>
 
           {Object.entries(PRESET_FUNCTIONS).map(([key, preset]) => (

@@ -134,9 +134,6 @@ export function DirectCalculator() {
                 {preset}
               </TabsTrigger>
             ))}
-            <TabsTrigger value="Custom" className="text-xs">
-              Personalizado
-            </TabsTrigger>
           </TabsList>
 
           {/* Preset Content */}
@@ -201,13 +198,7 @@ export function DirectCalculator() {
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Switch id="extremes" checked={showExtremes} onCheckedChange={setShowExtremes} />
-            <Label htmlFor="extremes" className="text-sm">
-              Validador por extremos
-            </Label>
-          </div>
-
+          <div className="flex-1" />
           <div className="flex gap-3">
             <Button variant="outline" onClick={reset} disabled={!results}>
               <RotateCcw className="h-4 w-4 mr-2" />
