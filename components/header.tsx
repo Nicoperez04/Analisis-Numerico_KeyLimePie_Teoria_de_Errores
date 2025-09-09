@@ -9,7 +9,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 import { Users, Menu } from "lucide-react"
-import Logo from "../../../public/logo.png"  // Asegúrate de que la ruta sea correcta
 const navigation = [
   { name: "Home", href: "/" },
   { name: "Teoría", href: "/teoria" },
