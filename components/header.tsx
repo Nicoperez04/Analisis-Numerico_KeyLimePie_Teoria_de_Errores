@@ -18,6 +18,8 @@ const navigation = [
   { name: "Tecnologías", href: "/tecnologias" },
 ]
 
+const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const teamMembers = ["Nicolás Perez", "Agustina Egüen", "Santiago Talavera", "Tomás Bellizzi"]
 
 export function Header() {
@@ -64,7 +66,7 @@ export function Header() {
                     title="Ver integrantes"
                   >
                     <Image
-                      src="/logo.png"
+                      src={`${base}/logo.png`}
                       alt="Logo Key Lime Pie"
                       width={60}
                       height={60}
