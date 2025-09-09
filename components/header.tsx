@@ -64,7 +64,7 @@ export function Header() {
                     title="Ver integrantes"
                   >
                     <Image
-                      src={Logo}
+                      src="/logo.png"
                       alt="Logo Key Lime Pie"
                       width={60}
                       height={60}
